@@ -1,0 +1,4 @@
+import {Activity,BookOpen,LayoutDashboard,LogOut,Network} from 'lucide-react'
+import {NavLink,Outlet} from 'react-router-dom'
+import {Student} from '../types'
+export default function Shell({student,onLogout}:{student:Student;onLogout:()=>void}){return <div className="shell"><aside><div className="brand"><span>P</span><div>PALS<small>DSA learning lab</small></div></div><p className="nav-label">Workspace</p><nav><NavLink to="/"><LayoutDashboard/>Overview</NavLink><NavLink to="/courses"><BookOpen/>Curriculum</NavLink><NavLink to="/visual-lab"><Network/>Visual lab</NavLink><NavLink to="/intelligence"><Activity/>Learning model</NavLink></nav><div className="sidebar-status"><i/><span><b>Local services online</b><small>Judge · tutor · progress</small></span></div><button className="profile" onClick={onLogout}><span>{student.name[0].toUpperCase()}</span><div>{student.name}<small>{student.email}</small></div><LogOut size={16}/></button></aside><main><Outlet/></main></div>}

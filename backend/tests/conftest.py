@@ -1,51 +1,16 @@
-"""
-Pytest configuration and test fixtures.
-Sets up an in-memory SQLite database and test HTTP client.
-"""
-
+import os
+os.environ["DATABASE_URL"] = "sqlite://"
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.orm import sessionmaker
+from app.database import Base
+from app.seed import seed
 
-from app.core.database import Base, get_db
-from app.main import app
-
-# In-memory SQLite engine for fast, isolated unit testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-@pytest.fixture(scope="function")
-def db_session():
-    """Provides a clean in-memory database session for each test."""
-    Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
-        Base.metadata.drop_all(bind=engine)
-
-
-@pytest.fixture(scope="function")
-def client(db_session):
-    """Provides a TestClient with dependency override for get_db."""
-    def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
-
+engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+TestingSession = sessionmaker(bind=engine, expire_on_commit=False)
+@pytest.fixture()
+def db():
+    Base.metadata.drop_all(engine); Base.metadata.create_all(engine)
+    with TestingSession() as session:
+        seed(session); yield session
